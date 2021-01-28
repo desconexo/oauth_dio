@@ -26,7 +26,8 @@ class BearerInterceptor extends Interceptor {
 
 /// Use to implement a custom grantType
 abstract class OAuthGrantType {
-  RequestOptions handle(RequestOptions request);
+  /// handleRefreshToken is only needed in case you're using refreshGrantType to personalize you're own data in refreshAccessToken
+  RequestOptions handle(RequestOptions request, {String handleRefreshToken});
 }
 
 /// Obtain an access token using a username and password
@@ -39,7 +40,7 @@ class PasswordGrant extends OAuthGrantType {
 
   /// Prepare Request
   @override
-  RequestOptions handle(RequestOptions request) {
+  RequestOptions handle(RequestOptions request, {String handleRefreshToken}) {
     request.data =
         "grant_type=password&username=${Uri.encodeComponent(username)}&password=${Uri.encodeComponent(password)}&scope=${this.scope.join(' ')}";
     return request;
@@ -54,7 +55,7 @@ class RefreshTokenGrant extends OAuthGrantType {
 
   /// Prepare Request
   @override
-  RequestOptions handle(RequestOptions request) {
+  RequestOptions handle(RequestOptions request, {String handleRefreshToken}) {
     request.data = "grant_type=refresh_token&refresh_token=$refreshToken";
     return request;
   }
