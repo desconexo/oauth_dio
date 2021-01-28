@@ -137,20 +137,26 @@ class OAuth {
     validator = validator ?? (token) => Future.value(true);
   }
 
-  Future<OAuthToken> requestTokenAndSave(OAuthGrantType grantType) async {
-    return requestToken(grantType).then((token) => storage.save(token));
+  Future<OAuthToken> requestTokenAndSave(OAuthGrantType grantType,
+      {String refreshToken}) async {
+    return requestToken(grantType, refreshToken: refreshToken)
+        .then((token) => storage.save(token));
   }
 
   /// Request a new Access Token using a strategy
-  Future<OAuthToken> requestToken(OAuthGrantType grantType) {
-    final request = grantType.handle(RequestOptions(
-        method: 'POST',
-        contentType: 'application/x-www-form-urlencoded',
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "Authorization":
-              "Basic ${stringToBase64.encode('$clientId:$clientSecret')}"
-        }));
+  Future<OAuthToken> requestToken(OAuthGrantType grantType,
+      {String refreshToken}) {
+    final request = grantType.handle(
+      RequestOptions(
+          method: 'POST',
+          contentType: 'application/x-www-form-urlencoded',
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Authorization":
+                "Basic ${stringToBase64.encode('$clientId:$clientSecret')}"
+          }),
+      handleRefreshToken: refreshToken,
+    );
 
     return dio
         .request(tokenUrl, data: request.data, options: request)
@@ -174,8 +180,12 @@ class OAuth {
   Future<OAuthToken> refreshAccessToken() async {
     OAuthToken token = await storage.fetch();
 
-    return this.requestTokenAndSave(refreshGrantType == null
-        ? RefreshTokenGrant(refreshToken: token.refreshToken)
-        : refreshGrantType);
+    if (refreshGrantType == null) {
+      return this.requestTokenAndSave(
+          RefreshTokenGrant(refreshToken: token.refreshToken));
+    } else {
+      return this.requestTokenAndSave(refreshGrantType,
+          refreshToken: token.refreshToken);
+    }
   }
 }
