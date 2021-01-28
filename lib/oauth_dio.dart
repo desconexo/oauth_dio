@@ -106,6 +106,7 @@ class OAuthToken {
 Codec<String, String> stringToBase64 = utf8.fuse(base64);
 
 /// OAuth Client
+/// You need to use refreshGrantType only to personalize the data you send to your back-end
 class OAuth {
   Dio dio;
   String tokenUrl;
@@ -114,15 +115,18 @@ class OAuth {
   OAuthStorage storage;
   OAuthTokenExtractor extractor;
   OAuthTokenValidator validator;
+  OAuthGrantType refreshGrantType;
 
-  OAuth(
-      {this.tokenUrl,
-      this.clientId,
-      this.clientSecret,
-      this.extractor,
-      this.dio,
-      this.storage,
-      this.validator}) {
+  OAuth({
+    this.tokenUrl,
+    this.clientId,
+    this.clientSecret,
+    this.extractor,
+    this.dio,
+    this.storage,
+    this.validator,
+    this.refreshGrantType,
+  }) {
     dio = dio ?? Dio();
     storage = storage ?? OAuthMemoryStorage();
     extractor = extractor ??
@@ -169,7 +173,8 @@ class OAuth {
   Future<OAuthToken> refreshAccessToken() async {
     OAuthToken token = await storage.fetch();
 
-    return this.requestTokenAndSave(
-        RefreshTokenGrant(refreshToken: token.refreshToken));
+    return this.requestTokenAndSave(refreshGrantType == null
+        ? RefreshTokenGrant(refreshToken: token.refreshToken)
+        : refreshGrantType);
   }
 }
